@@ -1,0 +1,10 @@
+[package]
+name = "cli"
+version = "0.1.0"
+edition = "2021"
+
+
+[dependencies]
+devfile_schema = { path = "../../libs/devfile_schema" }
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
