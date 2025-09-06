@@ -5,7 +5,7 @@ use crd::devworkspaces::{
 use tracing::info;
 
 use crate::context::DevfileContext;
-
+// https://github.com/devfile/devworkspace-generator/blob/main/src/devfile/dev-container-component-inserter.ts
 pub fn insert_component_handler(
     devfile_context: &mut DevfileContext,
     default_component_image: Option<String>,
