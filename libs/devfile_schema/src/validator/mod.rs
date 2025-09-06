@@ -63,6 +63,16 @@ impl DevFileVersion {
     }
 
     #[tracing::instrument(level = "trace")]
+    pub fn as_str(&self) -> &'static str {
+        match &self {
+            DevFileVersion::V220 => "2.2.0",
+            DevFileVersion::V221 => "2.2.1",
+            DevFileVersion::V222 => "2.2.2",
+            DevFileVersion::V230 => "2.3.0",
+        }
+    }
+
+    #[tracing::instrument(level = "trace")]
     pub fn extract_schema_version(yaml: String) -> Option<DevFileVersion> {
         let dev_file = serde_yaml::Deserializer::from_str(&yaml);
         let dev_file_value = match Value::deserialize(dev_file) {

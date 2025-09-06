@@ -15,7 +15,7 @@ pub fn get_file_dest_rs(crd: String) -> String {
 
 pub fn get_cmd_kopium(crd: String) -> String {
     format!(
-        "kopium -f {} -A > {}",
+        "kopium -f {} -A --derive Default -b  > {}",
         get_file_path(crd.clone()),
         get_file_dest_rs(crd)
     )
@@ -35,6 +35,11 @@ pub fn handle_crd() {
         println!("Downloading CRD: {}", crd);
         let url = get_download_url(crd.to_string());
         let file_path = get_file_path(crd.to_string());
+        // Check if the target file already exists
+        if std::path::Path::new(&get_file_dest_rs(crd.to_owned())).exists() {
+            println!("File {} already exists, skipping download.", file_path);
+            continue;
+        }
         let response = reqwest::blocking::get(&url);
         let resp = match response {
             Ok(resp) => resp,

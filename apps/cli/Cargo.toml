@@ -6,5 +6,6 @@ edition = "2021"
 
 [dependencies]
 devfile_schema = { path = "../../libs/devfile_schema" }
+crd = { path = "../../libs/crd" }
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
