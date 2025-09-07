@@ -31,7 +31,7 @@ pub fn insert_component_handler(
         name: devfile_context.get_default_dev_container_name(),
         component_type: Some(DevWorkspaceTemplateComponentsComponentType::Container),
         container: Some(DevWorkspaceTemplateComponentsContainer {
-            image: image,
+            image,
             ..Default::default()
         }),
         ..Default::default()

@@ -36,7 +36,7 @@ impl Default for DevFileVersion {
 
 #[derive(Clone, Debug, Default)]
 pub struct DevfileContext {
-    pub devfile: DevFileVersion,
+    pub devfile: Option<DevFileVersion>,
 
     pub dev_workspace: Option<DevWorkspace>,
 

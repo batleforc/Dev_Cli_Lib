@@ -1,4 +1,4 @@
-use std::io::Write;
+use std::{fs::OpenOptions, io::Write};
 
 #[derive(Clone)]
 pub struct DevFileVersion {
@@ -21,6 +21,9 @@ impl DevFileVersion {
     }
     pub fn to_import_statement(&self) -> String {
         format!("import_types!(schema = \"{}\");", self.local_path)
+    }
+    pub fn to_typify_command(&self) -> String {
+        format!("cargo typify {} -o {}", self.file_path, self.rs_path)
     }
     pub fn to_include_statement(&self) -> String {
         format!(
@@ -95,23 +98,33 @@ pub fn handle_devfile_schema() {
     }
     let mut mod_file = std::fs::File::create(mod_rs_path).unwrap();
 
-    // Read the contents of the devfile_type.rs.pre file
-    let pre_content =
-        std::fs::read_to_string("libs/devfile_schema/src/devfile_type.rs.pre").unwrap();
-
     // write the macro import statements to the file
     for devfile in devfile_versions.iter() {
         if std::path::Path::new(&devfile.rs_path.clone()).exists() {
+            //continue;
             std::fs::remove_file(devfile.rs_path.clone()).unwrap();
         }
-        let mut file = std::fs::File::create(devfile.rs_path.clone()).unwrap();
-        file.write_all(pre_content.as_bytes()).unwrap();
-        file.write_all(devfile.to_import_statement().as_bytes())
-            .unwrap();
-        file.write_all(b"\n").unwrap();
-        file.write_all(devfile.to_include_statement().as_bytes())
-            .unwrap();
-        file.write_all(b"\n").unwrap();
+        let cmd = devfile.to_typify_command();
+        println!("Running command: {}", cmd);
+        let content = std::process::Command::new("sh")
+            .arg("-c")
+            .arg(cmd)
+            .spawn()
+            .expect("Failed to execute command");
+        let _ = content.wait_with_output().expect("Failed to wait on child");
+        let mut rs_file = OpenOptions::new()
+            .write(true)
+            .append(true)
+            .open(devfile.rs_path.clone());
+        match rs_file {
+            Ok(ref mut file) => {
+                writeln!(file, "{}", devfile.to_include_statement()).unwrap();
+            }
+            Err(e) => {
+                eprintln!("Error opening file {}: {}", devfile.rs_path, e);
+                continue;
+            }
+        }
         writeln!(
             mod_file,
             "pub mod devfile_{};",
