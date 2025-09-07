@@ -60,6 +60,7 @@ pub fn handle_crd() {
         println!("Running command: {}", cmd);
         let mut output = std::process::Command::new("sh");
         output.arg("-c").arg(cmd);
-        output.spawn().expect("Failed to execute command");
+        let mut child = output.spawn().expect("Failed to execute command");
+        child.wait().expect("Failed to wait on child");
     }
 }

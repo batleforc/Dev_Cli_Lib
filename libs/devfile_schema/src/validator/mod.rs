@@ -44,7 +44,7 @@ impl DevFileVersion {
                     Ok(_) => Some(version),
                     Err(_) => {
                         tracing::error!("Couldn't validate yaml");
-                        return None;
+                        None
                     }
                 }
             }

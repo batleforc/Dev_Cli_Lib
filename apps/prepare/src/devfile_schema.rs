@@ -113,7 +113,6 @@ pub fn handle_devfile_schema() {
             .expect("Failed to execute command");
         let _ = content.wait_with_output().expect("Failed to wait on child");
         let mut rs_file = OpenOptions::new()
-            .write(true)
             .append(true)
             .open(devfile.rs_path.clone());
         match rs_file {
