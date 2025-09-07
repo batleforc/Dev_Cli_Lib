@@ -1,3 +1,5 @@
+use crate::github::resolver::GithubResolver;
+
 pub trait UrlResolver {
     fn get_content_url(&self, path: String) -> String;
     fn get_url(&self) -> String;
@@ -11,6 +13,14 @@ pub trait Resolver {
     fn resolve(&self, url: String) -> Box<dyn UrlResolver>;
 }
 
-pub fn get_resolver(_url: String) -> Option<Box<dyn Resolver>> {
+pub fn get_resolver(url: String) -> Option<Box<dyn UrlResolver>> {
+    let resolvers: Vec<Box<dyn Resolver>> = vec![Box::new(GithubResolver::new())];
+
+    for resolver in resolvers {
+        if resolver.is_valid(url.clone()) {
+            return Some(resolver.resolve(url));
+        }
+    }
+
     None
 }
