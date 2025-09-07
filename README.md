@@ -13,9 +13,12 @@ The need come from the fact that the current implementation of devworkspace-gene
   - [x] devfile context
   - [x] devfile finder/insert default components
   - [x] editor download
-  - [ ] resolver
-    - [ ] github
-    - [ ] bitbucket
+  - [x] resolver
+    - [x] github
+    - [x] bitbucket
+    - [x] bitbucket server
+  - [ ] Generate
+- [ ] rewrite des test unitaire en 1 pour 1 si possible
 
 ## Reminder
 

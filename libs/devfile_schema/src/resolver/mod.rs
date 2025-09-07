@@ -1,4 +1,7 @@
-use crate::github::resolver::GithubResolver;
+use crate::{
+    bitbucket::resolver::BitBucketResolver, bitbucket_server::resolver::BitBucketServerResolver,
+    github::resolver::GithubResolver,
+};
 
 pub trait UrlResolver {
     fn get_content_url(&self, path: String) -> String;
@@ -14,13 +17,15 @@ pub trait Resolver {
 }
 
 pub fn get_resolver(url: String) -> Option<Box<dyn UrlResolver>> {
-    let resolvers: Vec<Box<dyn Resolver>> = vec![Box::new(GithubResolver::new())];
-
+    let resolvers: Vec<Box<dyn Resolver>> = vec![
+        Box::new(GithubResolver::new()),
+        Box::new(BitBucketResolver::new()),
+        Box::new(BitBucketServerResolver::new()),
+    ];
     for resolver in resolvers {
         if resolver.is_valid(url.clone()) {
             return Some(resolver.resolve(url));
         }
     }
-
     None
 }

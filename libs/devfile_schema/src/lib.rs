@@ -1,3 +1,5 @@
+pub mod bitbucket;
+pub mod bitbucket_server;
 pub mod component_handler;
 pub mod context;
 pub mod editor;
