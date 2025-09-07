@@ -1,0 +1,31 @@
+schemaVersion: 2.2.0
+metadata:
+  name: DevCliLib
+  language: rust
+  version: 1.0.0
+
+components:
+- name: tools
+  container:
+    image: ghcr.io/batleforc/weebodevimage/che-rust:main
+    memoryLimit: 10Gi
+    mountSources: true
+
+commands:
+- id: build
+  exec:
+    component: tools
+    workingDir: ${PROJECT_SOURCE}
+    commandLine: cargo build
+    group:
+      kind: build
+      isDefault: true
+
+- id: run
+  exec:
+    component: tools
+    workingDir: ${PROJECT_SOURCE}
+    commandLine: cargo run
+    group:
+      kind: run
+      isDefault: true

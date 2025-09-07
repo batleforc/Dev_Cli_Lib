@@ -287,6 +287,7 @@ dependencies = [
  "crd",
  "jsonschema",
  "regress",
+ "reqwest",
  "serde",
  "serde_json",
  "serde_yaml",

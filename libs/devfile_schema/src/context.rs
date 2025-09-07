@@ -6,7 +6,9 @@ use crate::schemas::{
     devfile_2_3_0::{DevfileSchemaVersion230, DevfileSchemaVersion230SchemaVersion},
 };
 use crd::{devworkspaces::DevWorkspace, devworkspacetemplates::DevWorkspaceTemplateSpec};
+use serde::Deserialize;
 use serde_json::Map;
+use serde_yaml::Value;
 
 #[derive(Clone, Debug)]
 pub enum DevFileVersion {
@@ -31,6 +33,41 @@ impl Default for DevFileVersion {
             schema_version: DevfileSchemaVersion230SchemaVersion::try_from("2.3.0").unwrap(),
             variables: HashMap::new(),
         })
+    }
+}
+
+impl DevFileVersion {
+    pub fn extract_schema_version(yaml: String) -> Option<String> {
+        let dev_file = serde_yaml::Deserializer::from_str(&yaml);
+        let dev_file_value = match serde_yaml::Value::deserialize(dev_file) {
+            Ok(v) => v,
+            Err(_) => return None,
+        };
+        match dev_file_value.get("schemaVersion") {
+            Some(Value::String(s)) => Some(s.to_string()),
+            _ => return None,
+        }
+    }
+    pub fn parse(yaml: String) -> Result<Self, Box<dyn std::error::Error>> {
+        let schema_version = match DevFileVersion::extract_schema_version(yaml.clone()) {
+            Some(v) => v,
+            None => return Err("Failed to extract schema version from devfile".into()),
+        };
+        match schema_version.as_str() {
+            "2.2.1" => {
+                let devfile: DevfileSchemaVersion221 = serde_yaml::from_str(&yaml)?;
+                Ok(DevFileVersion::V221(devfile))
+            }
+            "2.2.2" => {
+                let devfile: DevfileSchemaVersion222 = serde_yaml::from_str(&yaml)?;
+                Ok(DevFileVersion::V222(devfile))
+            }
+            "2.3.0" => {
+                let devfile: DevfileSchemaVersion230 = serde_yaml::from_str(&yaml)?;
+                Ok(DevFileVersion::V230(devfile))
+            }
+            _ => Err(format!("Unsupported schema version: {}", schema_version).into()),
+        }
     }
 }
 
