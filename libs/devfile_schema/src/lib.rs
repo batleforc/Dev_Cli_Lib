@@ -3,6 +3,7 @@ pub mod bitbucket_server;
 pub mod component_handler;
 pub mod context;
 pub mod editor;
+pub mod generate;
 pub mod github;
 pub mod resolver;
 pub mod schemas;
