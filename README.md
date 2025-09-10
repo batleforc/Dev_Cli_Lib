@@ -17,7 +17,8 @@ The need come from the fact that the current implementation of devworkspace-gene
     - [x] github
     - [x] bitbucket
     - [x] bitbucket server
-  - [ ] Generate
+  - [x] Generate
+  - [ ] main.ts
 - [ ] rewrite des test unitaire en 1 pour 1 si possible
 
 ## Reminder

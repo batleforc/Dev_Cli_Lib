@@ -12,8 +12,7 @@ pub fn find_component_handler(
     devfile_context: &mut DevfileContext,
     inject_default_component: Option<String>,
     default_component_image: Option<String>,
-) -> Option<DevWorkspaceTemplateComponents> {
-    // TODO: check if a container component exists
+) -> Option<(DevWorkspaceTemplateComponents, DevfileContext)> {
     let cloned_context = devfile_context.clone();
     if cloned_context.devfile.is_some() {
         // check if the devfile has a parent
@@ -78,11 +77,11 @@ pub fn find_component_handler(
                         .is_none_or(|mount_source| mount_source)
             })
             .collect::<Vec<_>>();
-        Some(dev_components[0].clone())
+        Some((dev_components[0].clone(), devfile_context.clone()))
     } else if dev_components.len() == 1 {
-        Some(dev_components[0].clone())
+        Some((dev_components[0].clone(), devfile_context.clone()))
     } else {
         warn!("Multiple container components found, returning the first one");
-        Some(dev_components[0].clone())
+        Some((dev_components[0].clone(), devfile_context.clone()))
     }
 }

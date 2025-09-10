@@ -1,54 +1,37 @@
-use std::collections::BTreeMap;
+use crate::{context::DevfileContext, generate::content::GenerateContentError};
 
-use kube::api::ObjectMeta;
+pub mod content;
+pub mod metadata;
 
-use crate::context::DevFileVersion;
+pub fn generate(
+    devfile_content: String,
+    editor_content: String,
+    output_path: Option<String>,
+    inject_default_component: Option<String>,
+    default_component_image: Option<String>,
+) -> Result<DevfileContext, GenerateContentError> {
+    let context = content::generate_content(
+        devfile_content,
+        editor_content,
+        inject_default_component,
+        default_component_image,
+    )?;
 
-const DEVWORKSPACE_METADATA_ANNOTATION: &str = "dw.metadata.annotations";
+    if let Some(path) = output_path {
+        let mut content: Vec<String> = context
+            .dev_workspace_templates
+            .iter()
+            .map(|template| serde_yaml::to_string(template).unwrap())
+            .collect();
+        if let Some(dev_workspace) = &context.dev_workspace {
+            content.push(serde_yaml::to_string(dev_workspace).unwrap());
+        }
+        let output = content.join("\n---\n");
 
-pub fn create_devworkspace_metadata(
-    devfile: DevFileVersion,
-    generate_name: Option<String>,
-) -> ObjectMeta {
-    let mut devfile_metadata = ObjectMeta::default();
-    if let Some(generate_name) = generate_name {
-        devfile_metadata.generate_name = Some(generate_name);
+        // Write the output to the specified file
+
+        std::fs::write(path, output).map_err(|e| GenerateContentError::IoError(e))?;
     }
-    let attributes = match devfile {
-        DevFileVersion::V221(devfile) => {
-            if let Some(metadata) = devfile.metadata {
-                if let Some(name) = metadata.name {
-                    devfile_metadata.name = Some(name);
-                }
-            }
-            devfile.attributes
-        }
-        DevFileVersion::V222(devfile) => {
-            if let Some(metadata) = devfile.metadata {
-                if let Some(name) = metadata.name {
-                    devfile_metadata.name = Some(name);
-                }
-            }
-            devfile.attributes
-        }
-        DevFileVersion::V230(devfile) => {
-            if let Some(metadata) = devfile.metadata {
-                if let Some(name) = metadata.name {
-                    devfile_metadata.name = Some(name);
-                }
-            }
-            devfile.attributes
-        }
-    };
-    if attributes.contains_key(DEVWORKSPACE_METADATA_ANNOTATION) {
-        if let Some(name) = attributes.get(DEVWORKSPACE_METADATA_ANNOTATION) {
-            if let Some(name_str) = name.as_str() {
-                let _ = devfile_metadata.annotations.insert(BTreeMap::from([(
-                    DEVWORKSPACE_METADATA_ANNOTATION.to_string(),
-                    name_str.to_string(),
-                )]));
-            }
-        }
-    }
-    devfile_metadata
+
+    Ok(context)
 }

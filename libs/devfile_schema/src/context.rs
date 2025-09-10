@@ -1,11 +1,20 @@
 use std::collections::HashMap;
 
 use crate::schemas::{
-    devfile_2_2_1::DevfileSchemaVersion221,
-    devfile_2_2_2::DevfileSchemaVersion222,
-    devfile_2_3_0::{DevfileSchemaVersion230, DevfileSchemaVersion230SchemaVersion},
+    devfile_2_2_1::{DevfileSchemaVersion221, DevfileSchemaVersion221StarterProjectsItem},
+    devfile_2_2_2::{DevfileSchemaVersion222, DevfileSchemaVersion222StarterProjectsItem},
+    devfile_2_3_0::{
+        DevfileSchemaVersion230, DevfileSchemaVersion230SchemaVersion,
+        DevfileSchemaVersion230StarterProjectsItem,
+    },
 };
-use crd::{devworkspaces::DevWorkspace, devworkspacetemplates::DevWorkspaceTemplateSpec};
+use crd::{
+    devworkspaces::DevWorkspace,
+    devworkspacetemplates::{
+        DevWorkspaceTemplate as DevWorkspaceTemplateCrd, DevWorkspaceTemplateSpec,
+    },
+};
+use kube::api::ObjectMeta;
 use serde::Deserialize;
 use serde_json::Map;
 use serde_yaml::Value;
@@ -69,6 +78,148 @@ impl DevFileVersion {
             _ => Err(format!("Unsupported schema version: {}", schema_version).into()),
         }
     }
+    pub fn to_devworkspace_template(&self, metadata: ObjectMeta) -> DevWorkspaceTemplateCrd {
+        let mut template = DevWorkspaceTemplateCrd {
+            metadata,
+            spec: DevWorkspaceTemplateSpec {
+                ..Default::default()
+            },
+        };
+        match self {
+            DevFileVersion::V221(devfile) => {
+                // Pas ultra propre mais fait le job
+                let devfile_json = serde_json::to_string(devfile).unwrap_or_default();
+                let devfile_template: DevWorkspaceTemplateSpec =
+                    serde_json::from_str(&devfile_json).unwrap_or_default();
+                template.spec = devfile_template;
+            }
+            DevFileVersion::V222(devfile) => {
+                // Pas ultra propre mais fait le job
+                let devfile_json = serde_json::to_string(devfile).unwrap_or_default();
+                let devfile_template: DevWorkspaceTemplateSpec =
+                    serde_json::from_str(&devfile_json).unwrap_or_default();
+                template.spec = devfile_template;
+            }
+            DevFileVersion::V230(devfile) => {
+                // Pas ultra propre mais fait le job
+                let devfile_json = serde_json::to_string(devfile).unwrap_or_default();
+                let devfile_template: DevWorkspaceTemplateSpec =
+                    serde_json::from_str(&devfile_json).unwrap_or_default();
+                template.spec = devfile_template;
+            }
+        }
+        template
+    }
+    pub fn get_attributes(&self) -> Map<String, serde_json::Value> {
+        match self {
+            DevFileVersion::V221(devfile) => {
+                // Merge devfile.attributes and metadata.attributes if present
+                if let Some(metadata) = &devfile.metadata {
+                    let mut merged = devfile.attributes.clone();
+                    merged.extend(metadata.attributes.clone());
+                    return merged;
+                }
+                devfile.attributes.clone()
+            }
+            DevFileVersion::V222(devfile) => {
+                // Merge devfile.attributes and metadata.attributes if present
+                if let Some(metadata) = &devfile.metadata {
+                    let mut merged = devfile.attributes.clone();
+                    merged.extend(metadata.attributes.clone());
+                    return merged;
+                }
+                devfile.attributes.clone()
+            }
+            DevFileVersion::V230(devfile) => {
+                // Merge devfile.attributes and metadata.attributes if present
+                if let Some(metadata) = &devfile.metadata {
+                    let mut merged = devfile.attributes.clone();
+                    merged.extend(metadata.attributes.clone());
+                    return merged;
+                }
+                devfile.attributes.clone()
+            }
+        }
+    }
+    pub fn to_devworkspace(&self, metadata: ObjectMeta) -> DevWorkspace {
+        let mut workspace = DevWorkspace {
+            metadata,
+            spec: crd::devworkspaces::DevWorkspaceSpec {
+                started: true,
+                routing_class: Some("che".to_string()),
+                ..Default::default()
+            },
+            status: None,
+        };
+        match self {
+            DevFileVersion::V221(devfile) => {
+                // Pas ultra propre mais fait le job
+                let devfile_json = serde_json::to_string(devfile).unwrap_or_default();
+                let devfile_workspace: crd::devworkspaces::DevWorkspaceTemplate =
+                    serde_json::from_str(&devfile_json).unwrap_or_default();
+                workspace.spec.template = Some(devfile_workspace);
+            }
+            DevFileVersion::V222(devfile) => {
+                // Pas ultra propre mais fait le job
+                let devfile_json = serde_json::to_string(devfile).unwrap_or_default();
+                let devfile_workspace: crd::devworkspaces::DevWorkspaceTemplate =
+                    serde_json::from_str(&devfile_json).unwrap_or_default();
+                workspace.spec.template = Some(devfile_workspace);
+            }
+            DevFileVersion::V230(devfile) => {
+                // Pas ultra propre mais fait le job
+                let devfile_json = serde_json::to_string(devfile).unwrap_or_default();
+                let devfile_workspace: crd::devworkspaces::DevWorkspaceTemplate =
+                    serde_json::from_str(&devfile_json).unwrap_or_default();
+                workspace.spec.template = Some(devfile_workspace);
+            }
+        }
+        workspace
+    }
+
+    pub fn get_starter_projects_name(&self) -> String {
+        match self {
+            DevFileVersion::V221(devfile) => {
+                devfile
+                    .starter_projects
+                    .first()
+                    .map_or("".to_string(), |p| match p {
+                        DevfileSchemaVersion221StarterProjectsItem::Variant1 { name, .. } => {
+                            name.to_string()
+                        }
+                        DevfileSchemaVersion221StarterProjectsItem::Variant0 { name, .. } => {
+                            name.to_string()
+                        }
+                    })
+            }
+            DevFileVersion::V222(devfile) => {
+                devfile
+                    .starter_projects
+                    .first()
+                    .map_or("".to_string(), |p| match p {
+                        DevfileSchemaVersion222StarterProjectsItem::Variant1 { name, .. } => {
+                            name.to_string()
+                        }
+                        DevfileSchemaVersion222StarterProjectsItem::Variant0 { name, .. } => {
+                            name.to_string()
+                        }
+                    })
+            }
+            DevFileVersion::V230(devfile) => {
+                devfile
+                    .starter_projects
+                    .first()
+                    .map_or("".to_string(), |p| match p {
+                        DevfileSchemaVersion230StarterProjectsItem::Variant1 { name, .. } => {
+                            name.to_string()
+                        }
+                        DevfileSchemaVersion230StarterProjectsItem::Variant0 { name, .. } => {
+                            name.to_string()
+                        }
+                    })
+            }
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -77,7 +228,7 @@ pub struct DevfileContext {
 
     pub dev_workspace: Option<DevWorkspace>,
 
-    pub dev_workspace_templates: Vec<DevWorkspaceTemplateSpec>,
+    pub dev_workspace_templates: Vec<DevWorkspaceTemplateCrd>,
 
     pub suffix: Option<String>,
 }
