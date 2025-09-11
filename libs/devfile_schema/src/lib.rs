@@ -5,6 +5,7 @@ pub mod context;
 pub mod editor;
 pub mod generate;
 pub mod github;
+pub mod mains;
 pub mod resolver;
 pub mod schemas;
 pub mod validator;

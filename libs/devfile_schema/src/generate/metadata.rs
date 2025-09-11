@@ -41,12 +41,19 @@ pub fn create_devworkspace_metadata(
         }
     };
     if attributes.contains_key(DEVWORKSPACE_METADATA_ANNOTATION) {
-        if let Some(name) = attributes.get(DEVWORKSPACE_METADATA_ANNOTATION) {
-            if let Some(name_str) = name.as_str() {
+        if let Some(val) = attributes.get(DEVWORKSPACE_METADATA_ANNOTATION) {
+            if let Some(name_str) = val.as_str() {
                 let _ = devfile_metadata.annotations.insert(BTreeMap::from([(
                     DEVWORKSPACE_METADATA_ANNOTATION.to_string(),
                     name_str.to_string(),
                 )]));
+            }
+            if let Some(truc) = val.as_object() {
+                for (key, value) in truc {
+                    let _ = devfile_metadata
+                        .annotations
+                        .insert(BTreeMap::from([(key.to_string(), value.to_string())]));
+                }
             }
         }
     }
