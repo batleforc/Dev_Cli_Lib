@@ -1,10 +1,20 @@
 use std::collections::HashMap;
 
 use crate::schemas::{
-    devfile_2_2_1::{DevfileSchemaVersion221, DevfileSchemaVersion221StarterProjectsItem},
-    devfile_2_2_2::{DevfileSchemaVersion222, DevfileSchemaVersion222StarterProjectsItem},
+    devfile_2_2_1::{
+        DevfileSchemaVersion221, DevfileSchemaVersion221ProjectsItem,
+        DevfileSchemaVersion221ProjectsItemVariant0Git,
+        DevfileSchemaVersion221ProjectsItemVariant1Zip, DevfileSchemaVersion221StarterProjectsItem,
+    },
+    devfile_2_2_2::{
+        DevfileSchemaVersion222, DevfileSchemaVersion222ProjectsItem,
+        DevfileSchemaVersion222ProjectsItemVariant0Git,
+        DevfileSchemaVersion222ProjectsItemVariant1Zip, DevfileSchemaVersion222StarterProjectsItem,
+    },
     devfile_2_3_0::{
-        DevfileSchemaVersion230, DevfileSchemaVersion230SchemaVersion,
+        DevfileSchemaVersion230, DevfileSchemaVersion230ProjectsItem,
+        DevfileSchemaVersion230ProjectsItemVariant0Git,
+        DevfileSchemaVersion230ProjectsItemVariant1Zip, DevfileSchemaVersion230SchemaVersion,
         DevfileSchemaVersion230StarterProjectsItem,
     },
 };
@@ -76,6 +86,13 @@ impl DevFileVersion {
                 Ok(DevFileVersion::V230(devfile))
             }
             _ => Err(format!("Unsupported schema version: {}", schema_version).into()),
+        }
+    }
+    pub fn to_yaml_string(&self) -> String {
+        match self {
+            DevFileVersion::V221(devfile) => serde_yaml::to_string(devfile).unwrap_or_default(),
+            DevFileVersion::V222(devfile) => serde_yaml::to_string(devfile).unwrap_or_default(),
+            DevFileVersion::V230(devfile) => serde_yaml::to_string(devfile).unwrap_or_default(),
         }
     }
     pub fn to_devworkspace_template(&self, metadata: ObjectMeta) -> DevWorkspaceTemplateCrd {
@@ -220,8 +237,264 @@ impl DevFileVersion {
             }
         }
     }
-}
 
+    pub fn replace_if_existing_projects(&self, projects: Vec<(String, String)>) -> Self {
+        if projects.is_empty() {
+            return self.clone();
+        }
+        match &self {
+            DevFileVersion::V221(devfile) => {
+                let mut new_devfile = devfile.clone();
+                let mut new_starter_projects = vec![];
+                for project in devfile.projects.clone() {
+                    if let Some((_name, location)) = projects.iter().find(|(n, _)| match &project {
+                        DevfileSchemaVersion221ProjectsItem::Variant1 { name, .. } => {
+                            n == &name.to_string()
+                        }
+                        DevfileSchemaVersion221ProjectsItem::Variant0 { name, .. } => {
+                            n == &name.to_string()
+                        }
+                    }) {
+                        let new_project = match &project {
+                            DevfileSchemaVersion221ProjectsItem::Variant1 {
+                                name,
+                                zip,
+                                clone_path,
+                                attributes,
+                            } => {
+                                if !location.ends_with(".zip") {
+                                    DevfileSchemaVersion221ProjectsItem::Variant0 {
+                                        name: name.clone().to_string().try_into().unwrap(),
+                                        git: DevfileSchemaVersion221ProjectsItemVariant0Git {
+                                            remotes: HashMap::from([(
+                                                "origin".to_string(),
+                                                location.clone(),
+                                            )]),
+                                            checkout_from: None,
+                                        },
+                                        clone_path: clone_path.clone(),
+                                        attributes: attributes.clone(),
+                                    }
+                                } else {
+                                    DevfileSchemaVersion221ProjectsItem::Variant1 {
+                                        name: name.clone(),
+                                        zip: DevfileSchemaVersion221ProjectsItemVariant1Zip {
+                                            location: Some(location.clone()),
+                                            ..zip.clone()
+                                        },
+                                        clone_path: clone_path.clone(),
+                                        attributes: attributes.clone(),
+                                    }
+                                }
+                            }
+                            DevfileSchemaVersion221ProjectsItem::Variant0 {
+                                name,
+                                git,
+                                clone_path,
+                                attributes,
+                            } => {
+                                if location.ends_with(".zip") {
+                                    DevfileSchemaVersion221ProjectsItem::Variant1 {
+                                        name: name.clone().to_string().try_into().unwrap(),
+                                        zip: DevfileSchemaVersion221ProjectsItemVariant1Zip {
+                                            location: Some(location.clone()),
+                                            ..Default::default()
+                                        },
+                                        clone_path: clone_path.clone(),
+                                        attributes: attributes.clone(),
+                                    }
+                                } else {
+                                    let mut remotes = git.remotes.clone();
+                                    remotes.insert("origin".to_string(), location.clone());
+                                    DevfileSchemaVersion221ProjectsItem::Variant0 {
+                                        name: name.clone(),
+                                        git: DevfileSchemaVersion221ProjectsItemVariant0Git {
+                                            remotes,
+                                            checkout_from: git.checkout_from.clone(),
+                                        },
+                                        clone_path: clone_path.clone(),
+                                        attributes: attributes.clone(),
+                                    }
+                                }
+                            }
+                        };
+                        new_starter_projects.push(new_project);
+                    } else {
+                        new_starter_projects.push(project);
+                    }
+                }
+                new_devfile.projects = new_starter_projects;
+                DevFileVersion::V221(new_devfile)
+            }
+            DevFileVersion::V222(devfile) => {
+                let mut new_devfile = devfile.clone();
+                let mut new_starter_projects = vec![];
+                for project in devfile.projects.clone() {
+                    if let Some((_name, location)) = projects.iter().find(|(n, _)| match &project {
+                        DevfileSchemaVersion222ProjectsItem::Variant1 { name, .. } => {
+                            n == &name.to_string()
+                        }
+                        DevfileSchemaVersion222ProjectsItem::Variant0 { name, .. } => {
+                            n == &name.to_string()
+                        }
+                    }) {
+                        let new_project = match &project {
+                            DevfileSchemaVersion222ProjectsItem::Variant1 {
+                                name,
+                                zip,
+                                clone_path,
+                                attributes,
+                            } => {
+                                if !location.ends_with(".zip") {
+                                    DevfileSchemaVersion222ProjectsItem::Variant0 {
+                                        name: name.clone().to_string().try_into().unwrap(),
+                                        git: DevfileSchemaVersion222ProjectsItemVariant0Git {
+                                            remotes: HashMap::from([(
+                                                "origin".to_string(),
+                                                location.clone(),
+                                            )]),
+                                            checkout_from: None,
+                                        },
+                                        clone_path: clone_path.clone(),
+                                        attributes: attributes.clone(),
+                                    }
+                                } else {
+                                    DevfileSchemaVersion222ProjectsItem::Variant1 {
+                                        name: name.clone(),
+                                        zip: DevfileSchemaVersion222ProjectsItemVariant1Zip {
+                                            location: Some(location.clone()),
+                                            ..zip.clone()
+                                        },
+                                        clone_path: clone_path.clone(),
+                                        attributes: attributes.clone(),
+                                    }
+                                }
+                            }
+                            DevfileSchemaVersion222ProjectsItem::Variant0 {
+                                name,
+                                git,
+                                clone_path,
+                                attributes,
+                            } => {
+                                if location.ends_with(".zip") {
+                                    DevfileSchemaVersion222ProjectsItem::Variant1 {
+                                        name: name.clone().to_string().try_into().unwrap(),
+                                        zip: DevfileSchemaVersion222ProjectsItemVariant1Zip {
+                                            location: Some(location.clone()),
+                                            ..Default::default()
+                                        },
+                                        clone_path: clone_path.clone(),
+                                        attributes: attributes.clone(),
+                                    }
+                                } else {
+                                    let mut remotes = git.remotes.clone();
+                                    remotes.insert("origin".to_string(), location.clone());
+                                    DevfileSchemaVersion222ProjectsItem::Variant0 {
+                                        name: name.clone(),
+                                        git: DevfileSchemaVersion222ProjectsItemVariant0Git {
+                                            remotes,
+                                            checkout_from: git.checkout_from.clone(),
+                                        },
+                                        clone_path: clone_path.clone(),
+                                        attributes: attributes.clone(),
+                                    }
+                                }
+                            }
+                        };
+                        new_starter_projects.push(new_project);
+                    } else {
+                        new_starter_projects.push(project);
+                    }
+                }
+                new_devfile.projects = new_starter_projects;
+                DevFileVersion::V222(new_devfile)
+            }
+            DevFileVersion::V230(devfile) => {
+                let mut new_devfile = devfile.clone();
+                let mut new_starter_projects = vec![];
+                for project in devfile.projects.clone() {
+                    if let Some((_name, location)) = projects.iter().find(|(n, _)| match &project {
+                        DevfileSchemaVersion230ProjectsItem::Variant1 { name, .. } => {
+                            n == &name.to_string()
+                        }
+                        DevfileSchemaVersion230ProjectsItem::Variant0 { name, .. } => {
+                            n == &name.to_string()
+                        }
+                    }) {
+                        let new_project = match &project {
+                            DevfileSchemaVersion230ProjectsItem::Variant1 {
+                                name,
+                                zip,
+                                clone_path,
+                                attributes,
+                            } => {
+                                if !location.ends_with(".zip") {
+                                    DevfileSchemaVersion230ProjectsItem::Variant0 {
+                                        name: name.clone().to_string().try_into().unwrap(),
+                                        git: DevfileSchemaVersion230ProjectsItemVariant0Git {
+                                            remotes: HashMap::from([(
+                                                "origin".to_string(),
+                                                location.clone(),
+                                            )]),
+                                            checkout_from: None,
+                                        },
+                                        clone_path: clone_path.clone(),
+                                        attributes: attributes.clone(),
+                                    }
+                                } else {
+                                    DevfileSchemaVersion230ProjectsItem::Variant1 {
+                                        name: name.clone(),
+                                        zip: DevfileSchemaVersion230ProjectsItemVariant1Zip {
+                                            location: Some(location.clone()),
+                                            ..zip.clone()
+                                        },
+                                        clone_path: clone_path.clone(),
+                                        attributes: attributes.clone(),
+                                    }
+                                }
+                            }
+                            DevfileSchemaVersion230ProjectsItem::Variant0 {
+                                name,
+                                git,
+                                clone_path,
+                                attributes,
+                            } => {
+                                if location.ends_with(".zip") {
+                                    DevfileSchemaVersion230ProjectsItem::Variant1 {
+                                        name: name.clone().to_string().try_into().unwrap(),
+                                        zip: DevfileSchemaVersion230ProjectsItemVariant1Zip {
+                                            location: Some(location.clone()),
+                                            ..Default::default()
+                                        },
+                                        clone_path: clone_path.clone(),
+                                        attributes: attributes.clone(),
+                                    }
+                                } else {
+                                    let mut remotes = git.remotes.clone();
+                                    remotes.insert("origin".to_string(), location.clone());
+                                    DevfileSchemaVersion230ProjectsItem::Variant0 {
+                                        name: name.clone(),
+                                        git: DevfileSchemaVersion230ProjectsItemVariant0Git {
+                                            remotes,
+                                            checkout_from: git.checkout_from.clone(),
+                                        },
+                                        clone_path: clone_path.clone(),
+                                        attributes: attributes.clone(),
+                                    }
+                                }
+                            }
+                        };
+                        new_starter_projects.push(new_project);
+                    } else {
+                        new_starter_projects.push(project);
+                    }
+                }
+                new_devfile.projects = new_starter_projects;
+                DevFileVersion::V230(new_devfile)
+            }
+        }
+    }
+}
 #[derive(Clone, Debug, Default)]
 pub struct DevfileContext {
     pub devfile: Option<DevFileVersion>,

@@ -19,6 +19,8 @@ The need come from the fact that the current implementation of devworkspace-gene
     - [x] bitbucket server
   - [x] Generate
   - [ ] main.ts
+    - [x] replaceIfExistingProjects
+    - [ ] generateDevFileContext
 - [ ] rewrite des test unitaire en 1 pour 1 si possible
 
 ## Reminder
